@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2017-2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017-2019, The Linux Foundation. All rights reserved.
  */
 
 #define KMSG_COMPONENT "QDSS diag bridge"
@@ -460,8 +460,7 @@ static void usb_notifier(void *priv, unsigned int event,
 		break;
 
 	case USB_QDSS_DISCONNECT:
-		if (drvdata->opened == ENABLE)
-			usb_qdss_free_req(drvdata->usb_ch);
+		/* Leave MHI/USB open.Only close on MHI disconnect */
 		break;
 
 	case USB_QDSS_DATA_WRITE_DONE:
