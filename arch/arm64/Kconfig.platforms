@@ -167,6 +167,15 @@ config ARCH_SONY_EDO
 	If you enable this config,
 	please use SONY Mobile device tree.
 
+config MACH_SONY_EDO_CDB
+	bool "Sony Mobile Edo CDB"
+	depends on ARCH_SONY_EDO
+	help
+	Support for the SONY Mobile Edo CDB board
+	which is based on SONY Edo platform.
+	If you enable this config,
+	please use SONY Mobile device tree.
+
 config MACH_SONY_PDX203
 	bool "Sony Mobile PDX-203"
 	depends on ARCH_SONY_EDO
