@@ -69,7 +69,7 @@ __read_mostly int scheduler_running;
 int sysctl_sched_rt_runtime = 950000;
 
 #ifdef CONFIG_NO_HZ_COMMON
-DEFINE_PER_CPU(atomic_t, claim_wake_up_cpu) = ATOMIC_INIT(0);
+cpumask_t cpu_wclaimed_mask;
 #endif
 
 /*
@@ -1618,8 +1618,7 @@ int select_task_rq(struct task_struct *p, int cpu, int sd_flags, int wake_flags,
 		cpu = select_fallback_rq(task_cpu(p), p, allow_isolated);
 
 #ifdef CONFIG_NO_HZ_COMMON
-	if (unlikely(!atomic_read(&per_cpu(claim_wake_up_cpu, cpu))))
-		atomic_set(&per_cpu(claim_wake_up_cpu, cpu), 1);
+	cpumask_test_and_set_cpu(cpu, &cpu_wclaimed_mask);
 #endif
 	return cpu;
 }

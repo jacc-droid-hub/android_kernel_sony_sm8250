@@ -3230,11 +3230,6 @@ static int __response_handler(struct iris_hfi_device *device)
 			}
 		};
 
-		if (vsfr) {
-			dprintk(CVP_ERR, "SFR Message from FW: %s\n",
-					vsfr->rg_data);
-			cvpss_hfi_crash_reason(vsfr);
-		}
 		if (device->intr_status & CVP_WRAPPER_INTR_MASK_CPU_NOC_BMSK)
 			dprintk(CVP_ERR, "Received Xtensa NOC error\n");
 
