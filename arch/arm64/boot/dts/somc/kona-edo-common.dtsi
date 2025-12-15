@@ -1268,7 +1268,7 @@
 	pinctrl-1 = <&sm_gpio_125_suspend &sm_gpio_126_suspend>;
 	qcom,clk-freq-out = <400000>;
 	status = "okay";
-	tcs3490:tcs3490@72 {
+	tcs3490@72 {
 		compatible = "ams,tcs3490";
 		reg = <0x72>;
 		interrupt-parent = <&tlmm>;
