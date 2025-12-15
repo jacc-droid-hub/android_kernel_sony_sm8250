@@ -122,6 +122,10 @@ ifneq ($(KBUILD_DIFFCONFIG), )
 	$(Q)cp -f .config .config.common
 	$(Q)$(srctree)/$(obj)/merge_config.sh -m .config \
 		$(srctree)/arch/$(SRCARCH)/configs/diffconfig/$(KBUILD_DIFFCONFIG)
+ifeq ($(TARGET_BUILD_VARIANT),user)
+	$(Q)$(srctree)/$(obj)/merge_config.sh -m .config \
+		$(srctree)/arch/$(SRCARCH)/configs/vendor/debugfs.config
+endif
 	$(Q)$< --defconfig=.config $(Kconfig)
 endif
 
