@@ -20,7 +20,6 @@ struct qdss_request {
 	struct scatterlist *sg;
 	unsigned int num_sgs;
 	unsigned int num_mapped_sgs;
-	struct completion write_done;
 };
 
 struct usb_qdss_ch {
