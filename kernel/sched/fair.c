@@ -11496,11 +11496,11 @@ void nohz_balance_enter_idle(int cpu)
 	if (!cpu_active(cpu))
 		return;
 
-	atomic_set(&per_cpu(claim_wake_up_cpu, cpu), 0);
-
 	/* Spare idle load balancing on CPUs that don't want to be disturbed: */
 	if (!housekeeping_cpu(cpu, HK_FLAG_SCHED))
 		return;
+
+	cpumask_clear_cpu(cpu, &cpu_wclaimed_mask);
 
 	/*
 	 * Can be set safely without rq->lock held
@@ -12531,6 +12531,7 @@ __init void init_sched_fair_class(void)
 	nohz.next_balance = jiffies;
 	nohz.next_blocked = jiffies;
 	zalloc_cpumask_var(&nohz.idle_cpus_mask, GFP_NOWAIT);
+	cpumask_clear(&cpu_wclaimed_mask);
 #endif
 #endif /* SMP */
 
