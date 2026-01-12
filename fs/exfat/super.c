@@ -797,7 +797,7 @@ static struct dentry *exfat_fs_mount(struct file_system_type *fs_type,
 
 static struct file_system_type exfat_fs_type = {
 	.owner			= THIS_MODULE,
-	.name			= "exfat",
+	.name			= "texfat",
 	.mount			= exfat_fs_mount,
 	.kill_sb		= kill_block_super,
 	.fs_flags		= FS_REQUIRES_DEV,
@@ -858,7 +858,7 @@ static void __exit exit_exfat_fs(void)
 module_init(init_exfat_fs);
 module_exit(exit_exfat_fs);
 
-MODULE_ALIAS_FS("exfat");
+MODULE_ALIAS_FS("texfat");
 MODULE_LICENSE("GPL");
 MODULE_DESCRIPTION("exFAT filesystem support");
 MODULE_AUTHOR("Samsung Electronics Co., Ltd.");
