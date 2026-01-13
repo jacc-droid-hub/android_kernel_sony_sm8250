@@ -5190,6 +5190,36 @@ err_out:
 	sec_cmd_set_cmd_result(sec, buff, strnlen(buff, sizeof(buff)));
 }
 
+static int write_and_verify(struct sec_ts_data *ts, int param, u8 value)
+{
+	int retry = 3;
+	u8 check;
+	int rc = ts->sec_ts_i2c_write(ts, param, &value, 1);
+
+	if (rc < 0) {
+		input_err(true, &ts->client->dev,
+				"%s: error writing param %d value %u\n", __func__,
+				param, value);
+		return rc;
+	}
+
+	while (retry--) {
+		sec_ts_delay(10);
+		rc = ts->sec_ts_i2c_read(ts, param, &check, 1);
+		if (rc < 0) {
+			input_err(true, &ts->client->dev,
+					"%s: error reading param %d\n", __func__, param);
+			return rc;
+		}
+		if (value == check)
+			return 0;
+	}
+	input_err(true, &ts->client->dev,
+			"%s: failed to set param %d, value %u\n", __func__,
+			param, value);
+	return -1;
+}
+
 int set_report_rate(struct sec_ts_data *ts, int mode)
 {
 	int ret = 0;
@@ -5202,20 +5232,11 @@ int set_report_rate(struct sec_ts_data *ts, int mode)
 	if ((REPORT_RATE & mode) == REPORT_RATE)
 		report_rate_status = 0x01;
 
-	ret = ts->sec_ts_i2c_write(ts, SEC_TS_CMD_ENABLE_DOZE,
-		&doze_status, 1);
-
-	if (ret < 0) {
-		input_err(true, &ts->client->dev, "%s: error send doze mode command\n", __func__);
+	ret = write_and_verify(ts, SEC_TS_CMD_ENABLE_DOZE, doze_status);
+	if (ret)
 		return ret;
-	}
-
-	ret = ts->sec_ts_i2c_write(ts, SEC_TS_CMD_REPORT_RATE_CONTROL,
-		&report_rate_status, 1);
-
-	if (ret < 0)
-		input_err(true, &ts->client->dev, "%s: error send report rate control command\n", __func__);
-
+	ret = write_and_verify(ts, SEC_TS_CMD_REPORT_RATE_CONTROL,
+			report_rate_status);
 	return ret;
 }
 
@@ -5224,11 +5245,8 @@ static void doze_mode_change(void *device_data)
 	struct sec_cmd_data *sec = (struct sec_cmd_data *)device_data;
 	struct sec_ts_data *ts = container_of(sec, struct sec_ts_data, sec);
 	char buff[SEC_CMD_STR_LEN] = { 0 };
-	u8 doze_mode_on = 0x01;
-	u8 doze_mode_off = 0x00;
-	u8 tRead;
+	u8 doze_mode;
 	int ret = 0;
-	u8 mode = 0;
 
 	sec_cmd_set_default_result(sec);
 
@@ -5242,28 +5260,15 @@ static void doze_mode_change(void *device_data)
 			input_err(true, &ts->client->dev, "%s: param out of range\n", __func__);
 			goto err_out;
 		}
-
-		if (sec->cmd_param[0] == 0)
-			ret = ts->sec_ts_i2c_write(ts, SEC_TS_CMD_ENABLE_DOZE, &doze_mode_off, 1);
-	        else
-			ret = ts->sec_ts_i2c_write(ts, SEC_TS_CMD_ENABLE_DOZE, &doze_mode_on, 1);
-
-		if (ret < 0) {
-			input_err(true, &ts->client->dev, "%s: error sending doze command\n", __func__);
+		doze_mode = sec->cmd_param[0] == 0 ? 0 : 1;
+		ret = write_and_verify(ts, SEC_TS_CMD_ENABLE_DOZE, doze_mode);
+		if (ret)
 			goto err_out;
-		}
-
-		sec_ts_delay(10);
-
-		ret = ts->sec_ts_i2c_read(ts, SEC_TS_CMD_ENABLE_DOZE, &tRead, 1);
-		if (ret < 0) {
-			input_err(true, &ts->client->dev, "%s: error read doze command\n", __func__);
-			goto err_out;
-		}
-
 		input_info(true, &ts->client->dev, "%s: Doze mode is now %d\n",
-				__func__, tRead);
+				__func__, doze_mode);
 	} else {
+		u8 rate;
+
 		if (sec->cmd_param[0] < 1 || sec->cmd_param[0] > 3) {
 			input_err(true, &ts->client->dev, "%s: param out of range\n", __func__);
 			goto err_out;
@@ -5271,36 +5276,26 @@ static void doze_mode_change(void *device_data)
 
 		switch (sec->cmd_param[0]) {
 		case 1:
-			mode = DOZE_MODE;
+			doze_mode = 1; rate = 0;
 			break;
 		case 2:
-			mode = DOZE_MODE | REPORT_RATE;
+			doze_mode = 1; rate = 1;
 			break;
 		case 3:
-			mode = REPORT_RATE;
+			doze_mode = 0; rate = 1;
+			break;
 		}
 
-		ret = set_report_rate(ts, mode);
-		if (ret < 0)
+		ret = write_and_verify(ts, SEC_TS_CMD_ENABLE_DOZE, doze_mode);
+		if (ret)
 			goto err_out;
-
-		ret = ts->sec_ts_i2c_read(ts, SEC_TS_CMD_ENABLE_DOZE, &tRead, 1);
-		if (ret < 0) {
-			input_err(true, &ts->client->dev, "%s: error read doze command\n", __func__);
-			goto err_out;
-		}
-
 		input_info(true, &ts->client->dev, "%s: Doze mode is now %d\n",
-				__func__, tRead);
-
-		ret = ts->sec_ts_i2c_read(ts, SEC_TS_CMD_REPORT_RATE_CONTROL, &tRead, 1);
-		if (ret < 0) {
-			input_err(true, &ts->client->dev, "%s: error read doze command\n", __func__);
+					__func__, doze_mode);
+		ret = write_and_verify(ts, SEC_TS_CMD_REPORT_RATE_CONTROL, rate);
+		if (ret)
 			goto err_out;
-		}
-
 		input_info(true, &ts->client->dev, "%s: report rate control mode is now %d\n",
-				__func__, tRead);
+				__func__, rate);
 	}
 
 	snprintf(buff, sizeof(buff), "%s", "OK");
